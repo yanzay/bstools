@@ -3,8 +3,6 @@ package bstools
 import (
 	"fmt"
 	"strings"
-
-	"github.com/yanzay/log"
 )
 
 func ParseState(text string) (State, error) {
@@ -12,7 +10,6 @@ func ParseState(text string) (State, error) {
 	var townhall, storage, houses, farm, sawmill, mine, barracks int
 
 	for _, line := range lines {
-		log.Info(line)
 		if townhall == 0 {
 			fmt.Sscanf(line, "🏤   %d", &townhall)
 		}
@@ -44,7 +41,6 @@ func ParseState(text string) (State, error) {
 		Mine:     mine,
 		Barracks: barracks,
 	}
-	fmt.Println(state)
 	for build, level := range state {
 		if level == 0 {
 			return nil, fmt.Errorf("Can't parse %s", build)
