@@ -1,11 +1,11 @@
 package bstools
 
 const (
-	Townhall = "townhall"
-	Storage  = "storage"
-	Houses   = "houses"
-	Farm     = "farm"
-	Sawmill  = "sawmill"
-	Mine     = "mine"
-	Barracks = "barracks"
+	Townhall = "🏤 Town hall"
+	Storage  = "🏚 Storage"
+	Houses   = "🏘 Houses"
+	Farm     = "🌻 Farm"
+	Sawmill  = "🌲 Sawmill"
+	Mine     = "⛏ Mine"
+	Barracks = "🛡 Barracks"
 )
