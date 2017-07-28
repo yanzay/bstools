@@ -44,7 +44,7 @@ func (s State) BalancedUpgrade() *Upgrade {
 		housesUp := s.calcUpgrade(Houses)
 		townhallUp := s.calcUpgrade(Townhall)
 		price := storageUp.TotalCost() + housesUp.TotalCost() + townhallUp.TotalCost()
-		delta := s.incomeDelta(Townhall) + (s[Townhall]+1)*2 - 10
+		delta := s.IncomeDelta(Townhall) + (s[Townhall]+1)*2 - 10
 		payback := time.Duration(price/delta) * time.Minute
 		if payback < minPayback {
 			minPayback = payback
@@ -82,14 +82,14 @@ func (s State) calcPayback(upType string) time.Duration {
 	if _, ok := s.storageFitUpgrade(up.Type); !ok {
 		price += s.calcUpgrade(Storage).TotalCost()
 	}
-	delta := s.incomeDelta(upType)
+	delta := s.IncomeDelta(upType)
 	if delta != 0 {
 		return time.Duration(price/delta) * time.Minute
 	}
 	return math.MaxInt64
 }
 
-func (s State) incomeDelta(upType string) int {
+func (s State) IncomeDelta(upType string) int {
 	switch upType {
 	case Townhall:
 		return s[Houses] * 2
