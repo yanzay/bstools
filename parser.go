@@ -7,7 +7,7 @@ import (
 
 func ParseState(text string) (State, error) {
 	lines := strings.Split(text, "\n")
-	var townhall, storage, houses, farm, sawmill, mine, barracks int
+	var townhall, storage, houses, farm, sawmill, mine, barracks, wall, trebuchet int
 
 	for _, line := range lines {
 		if townhall == 0 {
@@ -31,20 +31,26 @@ func ParseState(text string) (State, error) {
 		if barracks == 0 {
 			fmt.Sscanf(line, "🛡   %d", &barracks)
 		}
+		if wall == 0 {
+			fmt.Sscanf(line, WallEmoji+"   %d", &wall)
+		}
+		if trebuchet == 0 {
+			fmt.Sscanf(line, TrebuchetEmoji+"Требушет %d", &trebuchet)
+		}
+		if trebuchet == 0 {
+			fmt.Sscanf(line, TrebuchetEmoji+"Trebuchet %d", &trebuchet)
+		}
 	}
 	state := State{
-		Townhall: townhall,
-		Storage:  storage,
-		Houses:   houses,
-		Farm:     farm,
-		Sawmill:  sawmill,
-		Mine:     mine,
-		Barracks: barracks,
-	}
-	for build, level := range state {
-		if level == 0 {
-			return nil, fmt.Errorf("Can't parse %s", build)
-		}
+		Townhall:  townhall,
+		Storage:   storage,
+		Houses:    houses,
+		Farm:      farm,
+		Sawmill:   sawmill,
+		Mine:      mine,
+		Barracks:  barracks,
+		Wall:      wall,
+		Trebuchet: trebuchet,
 	}
 
 	return state, nil

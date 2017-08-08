@@ -1,6 +1,7 @@
 package bstools
 
 import (
+	"fmt"
 	"math"
 	"time"
 )
@@ -11,14 +12,28 @@ type Coef struct {
 	Stone int
 }
 
+var allBuilds = []string{
+	Townhall,
+	Storage,
+	Houses,
+	Farm,
+	Sawmill,
+	Mine,
+	Barracks,
+	Wall,
+	Trebuchet,
+}
+
 var coefs = map[string]Coef{
-	Townhall: Coef{Gold: 500, Wood: 200, Stone: 200},
-	Storage:  Coef{Gold: 200, Wood: 100, Stone: 100},
-	Houses:   Coef{Gold: 200, Wood: 100, Stone: 100},
-	Farm:     Coef{Gold: 100, Wood: 50, Stone: 50},
-	Sawmill:  Coef{Gold: 100, Wood: 50, Stone: 50},
-	Mine:     Coef{Gold: 100, Wood: 50, Stone: 50},
-	Barracks: Coef{Gold: 200, Wood: 100, Stone: 100},
+	Townhall:  Coef{Gold: 500, Wood: 200, Stone: 200},
+	Storage:   Coef{Gold: 200, Wood: 100, Stone: 100},
+	Houses:    Coef{Gold: 200, Wood: 100, Stone: 100},
+	Farm:      Coef{Gold: 100, Wood: 50, Stone: 50},
+	Sawmill:   Coef{Gold: 100, Wood: 50, Stone: 50},
+	Mine:      Coef{Gold: 100, Wood: 50, Stone: 50},
+	Barracks:  Coef{Gold: 200, Wood: 100, Stone: 100},
+	Wall:      Coef{Gold: 5000, Wood: 500, Stone: 1500},
+	Trebuchet: Coef{Gold: 8000, Wood: 1000, Stone: 300},
 }
 
 type State map[string]int
@@ -64,15 +79,113 @@ func (s State) RushUpgrade() *Upgrade {
 	return s.calcUpgrade(Storage)
 }
 
+func (s State) BattleUpgrade() *Upgrade {
+	if s[Houses] < s[Barracks] {
+		return s.calcUpgrade(Houses)
+	}
+	if s[Wall]%2 != 0 {
+		if up, ok := s.storageFitUpgrade(Wall); ok {
+			return up
+		}
+		return s.calcUpgrade(Storage)
+	}
+	if s[Trebuchet]%2 != 0 {
+		if up, ok := s.storageFitUpgrade(Trebuchet); ok {
+			return up
+		}
+		return s.calcUpgrade(Storage)
+	}
+	housesCost := s.calcUpgrade(Houses).TotalCost()
+	barracksCost := s.calcUpgrade(Barracks).TotalCost()
+	storageCost := s.calcUpgrade(Storage).TotalCost()
+	wallCost := s.calcUpgrade(Wall).TotalCost()
+	trebCost := s.calcUpgrade(Trebuchet).TotalCost()
+	var storageForBarracks, storageForWall, storageForTreb bool
+
+	// barracks
+	var barracksPpw int
+	if s[Houses] == s[Barracks] {
+		barracksPpw = housesCost + barracksCost
+		if _, ok := s.storageFitUpgrade(Houses); !ok {
+			barracksPpw += storageCost
+			storageForBarracks = true
+		}
+		barracksPpw = barracksPpw / 40
+	} else {
+		barracksPpw = barracksCost / 40
+	}
+
+	// wall
+	state := copyState(s)
+	if _, ok := state.storageFitUpgrade(Wall); !ok {
+		wallCost += storageCost
+		state[Storage]++
+		storageForWall = true
+	}
+	state[Wall]++
+	wallCost += state.calcUpgrade(Wall).TotalCost()
+	if _, ok := state.storageFitUpgrade(Wall); !ok {
+		wallCost += state.calcUpgrade(Storage).TotalCost()
+	}
+	wallPpw := wallCost / 100
+
+	// treb
+	state = copyState(s)
+	if _, ok := state.storageFitUpgrade(Trebuchet); !ok {
+		trebCost += storageCost
+		state[Storage]++
+		storageForTreb = true
+	}
+	state[Trebuchet]++
+	trebCost += state.calcUpgrade(Trebuchet).TotalCost()
+	if _, ok := state.storageFitUpgrade(Trebuchet); !ok {
+		trebCost += state.calcUpgrade(Storage).TotalCost()
+	}
+	trebPpw := trebCost / 100
+
+	// decision
+	if barracksPpw < wallPpw && barracksPpw < trebPpw {
+		if storageForBarracks {
+			return s.calcUpgrade(Storage)
+		}
+		return s.calcUpgrade(Barracks)
+	}
+	if wallPpw < barracksPpw && wallPpw < trebPpw {
+		if storageForWall {
+			return s.calcUpgrade(Storage)
+		}
+		return s.calcUpgrade(Wall)
+	}
+	if storageForTreb {
+		return s.calcUpgrade(Storage)
+	}
+	return s.calcUpgrade(Trebuchet)
+}
+
+func (s State) Merge(state State) {
+	for _, build := range allBuilds {
+		s[build] = max(s[build], state[build])
+	}
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 func copyState(state State) State {
 	return State{
-		Townhall: state[Townhall],
-		Storage:  state[Storage],
-		Houses:   state[Houses],
-		Farm:     state[Farm],
-		Sawmill:  state[Sawmill],
-		Mine:     state[Mine],
-		Barracks: state[Barracks],
+		Townhall:  state[Townhall],
+		Storage:   state[Storage],
+		Houses:    state[Houses],
+		Farm:      state[Farm],
+		Sawmill:   state[Sawmill],
+		Mine:      state[Mine],
+		Barracks:  state[Barracks],
+		Wall:      state[Wall],
+		Trebuchet: state[Trebuchet],
 	}
 }
 
@@ -130,4 +243,13 @@ func (s State) gpm() int {
 	wood := s[Sawmill] * 20
 	stone := s[Mine] * 20
 	return gold + food + wood + stone
+}
+
+func (s State) Valid() error {
+	for _, build := range allBuilds {
+		if s[build] == 0 {
+			return fmt.Errorf("I need to know your %s", build)
+		}
+	}
+	return nil
 }
