@@ -35,10 +35,10 @@ func ParseState(text string) (State, error) {
 			fmt.Sscanf(line, WallEmoji+"   %d", &wall)
 		}
 		if trebuchet == 0 {
-			fmt.Sscanf(line, TrebuchetEmoji+"Требушет %d", &trebuchet)
+			fmt.Sscanf(line, TrebuchetEmoji+"Требушет%d", &trebuchet)
 		}
 		if trebuchet == 0 {
-			fmt.Sscanf(line, TrebuchetEmoji+"Trebuchet %d", &trebuchet)
+			fmt.Sscanf(line, TrebuchetEmoji+"Trebuchet%d", &trebuchet)
 		}
 	}
 	state := State{
